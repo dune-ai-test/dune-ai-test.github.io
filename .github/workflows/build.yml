@@ -60,6 +60,8 @@ jobs:
       - name: Publish site branch
         run: |
           cd src/dist
+          cp index.html 404.html          # SPA fallback for /demo, /rooms/... on GitHub Pages
+          touch .nojekyll                 # let Pages serve files starting with _
           git init
           git config user.name github-actions
           git config user.email github-actions@github.com
