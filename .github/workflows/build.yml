@@ -1,0 +1,52 @@
+name: Build OpenPencil web editor
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Build straight from the upstream repo — no fork required.
+      - name: Checkout upstream source
+        uses: actions/checkout@v4
+        with:
+          repository: open-pencil/open-pencil
+          ref: master
+          path: src
+          fetch-depth: 1
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      # Needed once to compile the HTML engine's WebAssembly module.
+      - name: Install Rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup target add wasm32-unknown-unknown
+
+      - name: Build
+        working-directory: src
+        run: |
+          bun install --frozen-lockfile
+          bun run build:packages
+          bunx vite build
+        env:
+          VITE_OPENPENCIL_CLOUD: "off"
+
+      # Publish the built files into THIS repo's `site` branch.
+      - name: Publish site branch
+        run: |
+          cd src/dist
+          git init
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add -A
+          git commit -m "site: build ${GITHUB_SHA}" || true
+          git push -f origin HEAD:site
