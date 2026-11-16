@@ -30,6 +30,22 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           rustup target add wasm32-unknown-unknown
 
+      # The web editor doesn't use Cloud. Building it needs >2 GB of JS heap and OOMs on
+      # GitHub runners, so remove it from the package build list (aliases keep Vite on source).
+      - name: Skip the Cloud package build
+        working-directory: src
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('tools/release/package-artifacts/src/build.ts')
+          s = p.read_text()
+          old = '.filter((pkg) => pkg.manifest.scripts?.build)'
+          new = ".filter((pkg) => pkg.manifest.scripts?.build && pkg.manifest.name !== '@open-pencil/cloud')"
+          assert old in s, 'build filter pattern not found'
+          p.write_text(s.replace(old, new, 1))
+          print('Cloud package excluded from build')
+          PY
+
       - name: Build
         working-directory: src
         run: |
@@ -38,6 +54,7 @@ jobs:
           bunx vite build
         env:
           VITE_OPENPENCIL_CLOUD: "off"
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       # Publish the built files into THIS repo's `site` branch.
       - name: Publish site branch
