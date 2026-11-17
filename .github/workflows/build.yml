@@ -46,6 +46,26 @@ jobs:
           print('Cloud package excluded from build')
           PY
 
+      # Inject the Neon state bridge (chat history + settings; never credentials).
+      - name: Inject Neon state sync
+        run: |
+          mkdir -p src/app/sync
+          cp neon-bridge.ts src/app/sync/neon-bridge.ts
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/main.ts')
+          s = p.read_text()
+          old = "import { reportBootFailure, runSupportGate } from '@/app/shell/support/gate'\n"
+          new = old + "import { restoreRemoteState, startStateSync } from '@/app/sync/neon-bridge'\n"
+          assert old in s, 'main.ts import pattern not found'
+          s = s.replace(old, new, 1)
+          old2 = "  if (!(await runSupportGate())) return\n"
+          new2 = old2 + "  await restoreRemoteState()\n  startStateSync()\n"
+          assert old2 in s, 'main.ts support gate pattern not found'
+          p.write_text(s.replace(old2, new2, 1))
+          print('Neon state bridge injected')
+          PY
+
       - name: Build
         working-directory: src
         run: |
