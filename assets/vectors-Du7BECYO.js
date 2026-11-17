@@ -1,0 +1,1 @@
+import{t as e}from"./vectors-BIcEO_al.js";export{e as vectorElement};

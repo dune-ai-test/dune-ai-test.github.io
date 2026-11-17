@@ -1,0 +1,1 @@
+import{n as e,t}from"./mdast-util-gfm-CECHnDqS.js";export{t as gfmFromMarkdown,e as gfmToMarkdown};
