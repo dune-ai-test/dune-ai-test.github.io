@@ -19,6 +19,12 @@ jobs:
           path: src
           fetch-depth: 1
 
+      # The bridge lives in THIS repo, so check it out beside the upstream source.
+      - name: Checkout this repo (bridge files)
+        uses: actions/checkout@v4
+        with:
+          path: bridge
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
@@ -50,7 +56,7 @@ jobs:
       - name: Inject Neon state sync
         run: |
           mkdir -p src/app/sync
-          cp neon-bridge.ts src/app/sync/neon-bridge.ts
+          cp bridge/neon-bridge.ts src/app/sync/neon-bridge.ts
           python3 - <<'PY'
           from pathlib import Path
           p = Path('src/main.ts')
