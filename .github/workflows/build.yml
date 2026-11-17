@@ -49,11 +49,15 @@ jobs:
       # Inject the Neon state bridge (chat history + settings; never credentials).
       - name: Inject Neon state sync
         run: |
+          pwd
+          ls -la
+          ls -la src | head -20
           mkdir -p src/app/sync
           curl -fsSL https://raw.githubusercontent.com/dune-ai-test/dune-ai-test.github.io/main/neon-bridge.ts -o src/app/sync/neon-bridge.ts
           python3 - <<'PY'
           from pathlib import Path
           p = Path('src/main.ts')
+          print('exists:', p.exists(), 'cwd:', Path.cwd())
           s = p.read_text()
           old = "import { reportBootFailure, runSupportGate } from '@/app/shell/support/gate'\n"
           new = old + "import { restoreRemoteState, startStateSync } from '@/app/sync/neon-bridge'\n"
